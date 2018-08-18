@@ -1,0 +1,176 @@
+<script>
+  s.content = new (function() {
+    this.propertys = 'added,shorthand,name,subjects,email,comments,leftSchool,outdated'.split(',');
+    this.booleanPropertys = 'isRecommended,isOutdated,devVersion'.split(',');
+    this.datePropertys = 'added,outdated'.split(',');
+    this.booleanPropertys = 'leftSchool'.split(',');
+    this.buildTeachersTable = () => {
+      request('/data/teachers', function(err, statusCode, body) {
+        if(err || statusCode !== 200) return alert('sth went wrong: ' + (err || 'statusCode ' + statusCode));
+        let table = document.getElementById('lessonranges').children[0];
+        let data = JSON.parse(body);
+        while(table.childElementCount > 1) table.removeChild(table.children[1]);
+        for(const entry of data) {
+          let row = document.createElement('tr');
+          for(const prop of s.content.propertys) {
+            let toadd = document.createElement('td');
+            if(s.content.datePropertys && s.content.datePropertys.includes(prop)) toadd.innerText = entry[prop] ? new Date(Number(entry[prop].substr(2))).toGMTString() : 'null';
+            else if(s.content.booleanPropertys && s.content.booleanPropertys.includes(prop)) toadd.innerText = entry[prop] === 1 ? 'y' : 'n';
+            else toadd.innerText = entry[prop];
+            row.appendChild(toadd);
+          }
+          let edit = document.createElement('td');
+          const i = document.createElement('i');
+          i.className = 'material-icons';
+          i.innerText = 'mode edit';
+          i.onclick = () => s.content.editEntry(entry);
+          edit.appendChild(i);
+          const i2 = document.createElement('i');
+          i2.className = 'material-icons';
+          i2.innerText = 'delete';
+          i2.onclick = () => s.content.delEntry(entry);
+          edit.appendChild(i2);
+          row.appendChild(edit);
+          table.appendChild(row);
+        }
+      });
+    }
+    this.setDefaultDates = () => {
+      for(const e of document.getElementsByClassName('datePicker-now'))
+        e.value = new Date(Date.now() - new Date().getTimezoneOffset() * 60 * 1000).toISOString().slice(0, -1);
+      }
+    this.delEntry = (entry) => {
+      request('/data/teachers', function(err, statusCode, body) {
+        if(err || statusCode !== 200) return alert('sth went wrong: ' + (err || 'statusCode ' + statusCode));
+        s.content.buildTeachersTable();
+      }, 'DELETE', JSON.stringify(entry.uuid));
+    }
+    this.doAdd = () => {
+      request('/data/teachers', function(err, statusCode, body) {
+        if(err || statusCode !== 200) return alert('sth went wrong: ' + (err || 'statusCode ' + statusCode));
+        s.content.buildTeachersTable();
+      }, 'PUT', JSON.stringify({
+        added: document.getElementById("add_added").value ? 'DT' + new Date(document.getElementById("add_added").value).getTime() : null,
+        shorthand: document.getElementById("add_shorthand").value || null,
+        name: document.getElementById("add_name").value || null,
+        subjects: document.getElementById("add_subjects").value || null,
+        email: document.getElementById("add_email").value || null,
+        comments: document.getElementById("add_comments").value || null,
+        leftSchool: document.getElementById("add_leftSchool").checked,
+        outdated: document.getElementById("add_outdated").value ? 'DT' + new Date(document.getElementById("add_added").value).getTime() : null
+      }));
+    }
+    this.editEntry = (entry) => {
+      document.getElementById("edit_added").value = new Date(Number(entry.added.substr(2))- new Date(Number(entry.added.substr(2))).getTimezoneOffset()*60*1000).toISOString().slice(0, -1);
+      document.getElementById("edit_shorthand").value = entry.shorthand;
+      document.getElementById("edit_name").value = entry.name;
+      document.getElementById("edit_subjects").value = entry.subjects;
+      document.getElementById("edit_email").value = entry.email;
+      document.getElementById("edit_comments").value = entry.comments;
+      document.getElementById("edit_leftSchool").checked = entry.leftSchool;
+      document.getElementById("edit_outdated").value = entry.outdated ? new Date(Number(entry.outdated.substr(2)) - new Date(Number(entry.outdated.substr(2))).getTimezoneOffset()*60*1000).toISOString().slice(0, -1) : null;
+      document.getElementById("edit_submit").onclick = () => s.content.doEdit(entry);
+    }
+    this.doEdit = (entry) => {
+      let added = document.getElementById("edit_added").value ? 'DT' + new Date(document.getElementById("edit_added").value).getTime() : null;
+      let shorthand = document.getElementById("edit_shorthand").value || null;
+      let name = document.getElementById("edit_name").value || null;
+      let subjects = document.getElementById("edit_subjects").value || null;
+      let email = document.getElementById("edit_email").value || null;
+      let comments = document.getElementById("edit_comments").value || null;
+      let leftSchool = document.getElementById("edit_leftSchool").checked || null;
+      let outdated = document.getElementById("edit_outdated").value ? 'DT' + new Date(document.getElementById("edit_outdated").value).getTime() : null;
+
+      let changes = { uuid: entry.uuid }
+      if(added !== entry.added) changes.added = added;
+      if(shorthand !== entry.shorthand) changes.shorthand = shorthand;
+      if(name !== entry.name) changes.name = name;
+      if(subjects !== entry.subjects) changes.subjects = subjects;
+      if(email !== entry.email) changes.email = email;
+      if(comments !== entry.comments) changes.comments = comments;
+      if(leftSchool !== entry.leftSchool) changes.leftSchool = leftSchool;
+      if(outdated !== entry.outdated) changes.outdated = outdated;
+
+      request('/data/lessonranges', function(err, statusCode, body) {
+        if(err || statusCode !== 200) return alert('sth went wrong: ' + (err || 'statusCode ' + statusCode));
+        s.content.buildLessonRangesTable();
+      }, 'POST', JSON.stringify(changes));
+    }
+  })();
+  s.content.setDefaultDates();
+  s.content.buildTeachersTable();
+</script>
+<style>
+  table {
+    background: #00afec;
+  }
+</style>
+<div>
+  <table id="lessonranges" style="width:100%" border="1">
+    <tr>
+      <th onclick="sortTable.call(this)">added</th>
+      <th onclick="sortTable.call(this)">shorthand</th>
+      <th onclick="sortTable.call(this)">name</th>
+      <th onclick="sortTable.call(this)">subjects</th>
+      <th onclick="sortTable.call(this)">email</th>
+      <th onclick="sortTable.call(this)">comments</th>
+      <th onclick="sortTable.call(this)">leftSchool</th>
+      <th onclick="sortTable.call(this)">outdated</th>
+    </tr>
+  </table>
+  <button onclick="s.content.buildTeachersTable()">refreshData</button>
+</div>
+<hr>
+<div>
+  edit
+  <table border="1">
+    <tr>
+      <th>added</th>
+      <th>shorthand</th>
+      <th>name</th>
+      <th>subjects</th>
+      <th>email</th>
+      <th>comments</th>
+      <th>leftSchool</th>
+      <th>outdated</th>
+    </tr>
+    <tr>
+      <td><input id="edit_added" class="datePicker-now" type=datetime-local step="1"></td>
+      <td><input id="edit_shorthand" type=text></td>
+      <td><input id="edit_name" type=text></td>
+      <td><input id="edit_subjects" type=text></td>
+      <td><input id="edit_email" type=text></td>
+      <td><input id="edit_comments" type=text></td>
+      <td><input id="edit_leftSchool" type=checkbox></td>
+      <td><input id="edit_outdated" type=datetime-local step="1"></td>
+    </tr>
+  </table>
+  <button id="edit_submit">editItem</button>
+</div>
+<hr>
+<div>
+  add
+  <table border="1">
+    <tr>
+      <th>added</th>
+      <th>shorthand</th>
+      <th>name</th>
+      <th>subjects</th>
+      <th>email</th>
+      <th>comments</th>
+      <th>leftSchool</th>
+      <th>outdated</th>
+    </tr>
+    <tr>
+      <td><input id="add_added" class="datePicker-now" type=datetime-local step="1"></td>
+      <td><input id="add_shorthand" type=text></td>
+      <td><input id="add_name" type=text></td>
+      <td><input id="add_subjects" type=text></td>
+      <td><input id="add_email" type=text></td>
+      <td><input id="add_comments" type=text></td>
+      <td><input id="add_leftSchool" type=checkbox></td>
+      <td><input id="add_outdated" type=datetime-local step="1"></td>
+    </tr>
+  </table>
+  <button onclick="s.content.doAdd()">addItem</button>
+</div>

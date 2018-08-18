@@ -1,0 +1,220 @@
+<script>
+  var s = new (function() {
+    this.stopDotter = null;
+    this.dotter = () => {
+      var canvas = document.getElementById('dotCanvas');
+      var context = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      canvas.style.display = "block";
+      context.fillStyle = "#00afec";
+      context.strokeStyle = "rgba(0, 175, 236, 0.1)";
+
+      var mousePosition = {
+        x: canvas.width / 2,
+        y: canvas.height / 2
+      };
+      var settings = {
+        nb: canvas.width / 15,	//amount of dots
+        distance: 100,			//between dots
+        d_radius: 400,			//dist from mouse
+        array: []				//dots
+      };
+
+      function DOT() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.radius = 2 * Math.random() + .1;
+        this.vx = (-1 + Math.random()) * (.5 * this.radius);
+        this.vy = (-1 + Math.random()) * (.5 * this.radius);
+      }
+      DOT.prototype = {
+        create: function () {
+          context.beginPath(),
+          context.arc(this.x, this.y, this.radius, 0, 2 * Math.PI, false),
+          context.fill()
+        }
+      };
+
+      var drawLines = function() {
+        for (var a = 0; a < settings.nb; a++) {
+          for (var b = 0; b < settings.nb; b++) {
+            var dotA = settings.array[a];
+            var dotB = settings.array[b];
+            if (
+              dotA.x - dotB.x < settings.distance
+              &&
+              dotA.y - dotB.y < settings.distance
+              &&
+              dotA.x - dotB.x > -settings.distance
+              &&
+              dotA.y - dotB.y > -settings.distance
+              &&
+              dotA.x - mousePosition.x < settings.d_radius
+              &&
+              dotA.y - mousePosition.y < settings.d_radius
+              &&
+              dotA.x - mousePosition.x > -settings.d_radius
+              &&
+              dotA.y - mousePosition.y > -settings.d_radius
+            ) {
+              var tenthLineLength = Math.sqrt((dotA.x - dotB.x) * (dotA.x - dotB.x) + (dotA.y - dotB.y) * (dotA.y - dotB.y)) / 10;
+              context.lineWidth = tenthLineLength > .5 ? .5 : .5 - tenthLineLength;
+              context.strokeStyle = "rgba(0, 175, 236, " + (tenthLineLength > .5 ? .5 : .5 - tenthLineLength) + ")";
+              context.beginPath();
+              context.moveTo(dotA.x, dotA.y);
+              context.lineTo(dotB.x, dotB.y);
+              context.stroke();
+              context.closePath();
+            }
+          }
+        }
+      }
+      var animate = function() {
+        for (var a = 0; a < settings.nb; a++) {
+          var element = settings.array[a];
+
+          if(element.y < 0 || element.y > canvas.height) element.vy = -element.vy;
+          if(element.x < 0 || element.x > canvas.width) element.vx = -element.vx;
+
+          element.x += element.vx;
+          element.y += element.vy;
+        }
+      }
+
+      let run = true;
+      window.requestAnimationFrame(function t() {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        for (a = 0; a < settings.nb; a++) {
+          var i = settings.array[a];
+          if(!i) settings.array.push(i = new DOT());
+          i.create();
+        }
+        drawLines();
+        animate();
+        if(run) window.requestAnimationFrame(t);
+      });
+      window.onmousemove = function (n) {
+        mousePosition.x = n.pageX
+        mousePosition.y = n.pageY
+      }
+      const onResize = function (e) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        settings.nb = canvas.width / 15;
+        settings.array.splice(settings.nb);
+        for (var a = 0; a < settings.nb; a++) {
+          var element = settings.array[a];
+          if(
+            element && (
+              element.y < 0 || element.y > canvas.height
+              ||
+              element.x < 0 || element.x > canvas.width
+            )
+          ) settings.array.splice(a, 1);
+        }
+        context.fillStyle = "#00afec";
+        context.strokeStyle = "rgba(0, 175, 236, 0.1)";
+      }
+      window.addEventListener('resize', onResize);
+
+      return function() {
+        run = false;
+        window.onmousemove = null;
+        window.removeEventListener('resize', onResize)
+      }
+    }
+    this.registerListener = () => {
+      document.getElementById('signin').addEventListener("click", function() {
+        this.classList.add('loading');
+        s.login((function(err, profile) {
+          this.classList.remove('loading');
+          if(err) return s.displayLoginError(err);
+          if(this.stopDotter) this.stopDotter();
+          clean(function() {
+            loadPage('./content/pages/home.html', function() {
+              window.history.pushState(null, null, '/home');
+            });
+          });
+        }).bind(this));
+      });
+      document.getElementById("login-pw").addEventListener("keyup", function(event) {
+        event.preventDefault();
+        if (event.keyCode === 13) document.getElementById("signin").click();
+      });
+      document.getElementById("login-id").addEventListener("keyup", function(event) {
+        event.preventDefault();
+        if (event.keyCode === 13) document.getElementById("signin").click();
+      });
+    }
+    this.displayLoginError = (error) => {
+      let parent = document.getElementById('landing-form-wrapper');
+      if(!parent.classList.contains('landing-form-error')) parent.classList.add('landing-form-error');
+      let errorHolder = document.getElementById('landing-error');
+      if(!errorHolder.classList.contains('landing-error')) errorHolder.classList.add('landing-error');
+      window.navigator.vibrate(200);
+      errorHolder.innerText = error;
+    }
+    this.removeLoginError = () => {
+      let parent = document.getElementById('landing-form-wrapper');
+      if(parent.classList.contains('landing-form-error')) parent.classList.remove('landing-form-error');
+      let errorHolder = document.getElementById('landing-error');
+      if(errorHolder.classList.contains('landing-error')) errorHolder.classList.remove('landing-error');
+      errorHolder.innerText = '';
+    }
+    this.login = (cb) => {
+      request('/data/login', function(err, statusCode, body) {
+        if(err) return cb(err);
+        try {
+          let parsed = JSON.parse(body);
+          if(parsed.error) return cb(new Error(parsed.error));
+          if(statusCode !== 200) return cb(new Error('statusCode ' + statusCode));
+          profile = parsed;
+          cb(null, profile);
+        } catch(e) {
+          cb(e);
+        }
+      }, 'POST', JSON.stringify({
+        id: document.getElementById('login-id').value || null,
+        pw: document.getElementById('login-pw').value || null
+      }));
+    }
+  })();
+  s.registerListener();
+  s.stopDotter = s.dotter();
+  registerPrevLocation('/login');
+</script>
+<div class="background">
+  <canvas id="dotCanvas"/>
+</div>
+<div id="landing-form-wrapper" class="landing-form-wrapper">
+  <div class="title">
+    NIGB-APP-Admin<br>
+    <span>Sign in</span>
+    <div id="landing-error"></div>
+  </div>
+  <div class="landing-form-row">
+    <div class="input-wrapper">
+      <input id="login-id" name="username" placeholder="Username or email" type="text"/>
+      <div class="input-pre">
+        <i class="material-icons">account_circle</i>
+      </div>
+    </div>
+  </div>
+  <div class="landing-form-row">
+    <div class="input-wrapper">
+      <input id="login-pw" name="password" placeholder="Password" type="password"/>
+      <div class="input-pre circled">
+        <i class="material-icons">vpn_key</i>
+      </div>
+    </div>
+    <div class="text-button" style="opacity: 0;pointer-events: none;">Forgotten your password?</div>
+  </div>
+  <div class="landing-form-actions">
+    <div class="text-button" style="opacity: 0;pointer-events: none;">Need an account? Sign up</div>
+    <div id="signin" class="landing-form-button">
+      Sign in
+      <div class="inline-loader"></div>
+    </div>
+  </div>
+</div>

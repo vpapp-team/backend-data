@@ -1,0 +1,157 @@
+<script>
+  s.content = new (function() {
+    this.propertys = 'version,platform,apiVersion,isRecommended,isOutdated,devVersion'.split(',');
+    this.booleanPropertys = 'isRecommended,isOutdated,devVersion'.split(',');
+    this.platforms = 'ios,android,backend'.split(',');
+    this.buildVersionsTable = () => {
+      request('/data/versions', function(err, statusCode, body) {
+        if(err || statusCode !== 200) return alert('sth went wrong: ' + (err || 'statusCode ' + statusCode));
+        let table = document.getElementById('versions').children[0];
+        let data = JSON.parse(body);
+        while(table.childElementCount > 1) table.removeChild(table.children[1]);
+        for(const entry of data) {
+          let row = document.createElement('tr');
+          for(const prop of s.content.propertys) {
+            let toadd = document.createElement('td');
+            if(s.content.datePropertys && s.content.datePropertys.includes(prop)) toadd.innerText = entry[prop] ? new Date(Number(entry[prop].substr(2))).toGMTString() : 'null';
+            else if(s.content.booleanPropertys && s.content.booleanPropertys.includes(prop)) toadd.innerText = entry[prop] === 1 ? 'y' : 'n';
+            else toadd.innerText = entry[prop];
+            row.appendChild(toadd);
+          }
+          let edit = document.createElement('td');
+          const i = document.createElement('i');
+          i.className = 'material-icons';
+          i.innerText = 'mode edit';
+          i.onclick = () => s.content.editEntry(entry);
+          edit.appendChild(i);
+          const i2 = document.createElement('i');
+          i2.className = 'material-icons';
+          i2.innerText = 'delete';
+          i2.onclick = () => s.content.delEntry(entry);
+          edit.appendChild(i2);
+          row.appendChild(edit);
+          table.appendChild(row);
+        }
+      });
+    }
+    this.delEntry = (entry) => {
+      request('/data/versions', function(err, statusCode, body) {
+        if(err || statusCode !== 200) return alert('sth went wrong: ' + (err || 'statusCode ' + statusCode));
+        s.content.buildVersionsTable();
+      }, 'DELETE', JSON.stringify({version: entry.version, platform: entry.platform}));
+    }
+    this.editEntry = (entry) => {
+      document.getElementById("edit_version").innerText = entry.version;
+      document.getElementById("edit_platform").innerText = entry.platform;
+      document.getElementById("edit_apiVersion").value = entry.apiVersion;
+      document.getElementById("edit_isRecommended").checked = entry.isRecommended;
+      document.getElementById("edit_isOutdated").checked = entry.isOutdated;
+      document.getElementById("edit_devVersion").checked = entry.devVersion;
+      document.getElementById("edit_submit").onclick = () => s.content.doEdit(entry);
+    }
+    this.doAdd = () => {
+      request('/data/versions', function(err, statusCode, body) {
+        if(err || statusCode !== 200) return alert('sth went wrong: ' + (err || 'statusCode ' + statusCode));
+        s.content.buildVersionsTable();
+      }, 'PUT', JSON.stringify({
+        version: document.getElementById("add_version").value || null,
+        platform: document.getElementById("add_platform").value,
+        apiVersion: document.getElementById("add_apiVersion").value || null,
+        isRecommended: document.getElementById("add_isRecommended").checked,
+        isOutdated: document.getElementById("add_isOutdated").checked,
+        devVersion: document.getElementById("add_devVersion").checked
+      }));
+    }
+    this.doEdit = (entry) => {
+      request('/data/versions', function(err, statusCode, body) {
+        if(err || statusCode !== 200) return alert('sth went wrong: ' + (err || 'statusCode ' + statusCode));
+        s.content.buildVersionsTable();
+      }, 'POST', JSON.stringify({
+        version: entry.version,
+        platform: entry.platform,
+        apiVersion: document.getElementById("edit_apiVersion").value || null,
+        isRecommended: document.getElementById("edit_isRecommended").checked,
+        isOutdated: document.getElementById("edit_isOutdated").checked,
+        devVersion: document.getElementById("edit_devVersion").checked
+      }));
+    }
+    this.buildPlatformSelector = () => {
+      const holders = document.getElementsByClassName('platformSelector');
+      for(const holder of holders) {
+        holder.innerHTML = '';
+        for(const cat of s.content.platforms) {
+          const toadd = document.createElement('option');
+          toadd.value = cat;
+          toadd.innerText = cat;
+          holder.appendChild(toadd);
+        }
+      }
+    }
+  })();
+  s.content.buildPlatformSelector();
+  s.content.buildVersionsTable();
+</script>
+<style>
+  table {
+    background: #00afec;
+  }
+</style>
+<div>
+  <table id="versions" style="width:100%" border="1">
+    <tr>
+      <th onclick="sortTable.call(this)">version</th>
+      <th onclick="sortTable.call(this)">platform</th>
+      <th onclick="sortTable.call(this)">apiVersion</th>
+      <th onclick="sortTable.call(this)">isRecommended</th>
+      <th onclick="sortTable.call(this)">isOutdated</th>
+      <th onclick="sortTable.call(this)">devVersion</th>
+    </tr>
+  </table>
+  <button onclick="s.content.buildVersionsTable()">refreshData</button>
+</div>
+<hr>
+<div>
+  add
+  <table border="1">
+    <tr>
+      <th>version</th>
+      <th>platform</th>
+      <th>apiVersion</th>
+      <th>isRecommended</th>
+      <th>isOutdated</th>
+      <th>devVersion</th>
+    </tr>
+    <tr>
+      <td><input id="add_version" type=text></td>
+      <td><select class="platformSelector" id="add_platform"></select></td>
+      <td><input id="add_apiVersion" type=text></td>
+      <td><input id="add_isRecommended" type=checkbox></td>
+      <td><input id="add_isOutdated" type=checkbox></td>
+      <td><input id="add_devVersion" type=checkbox></td>
+    </tr>
+  </table>
+  <button onclick="s.content.doAdd()">addItem</button>
+</div>
+<hr>
+<div>
+  edit
+  <table border="1">
+    <tr>
+      <th>version</th>
+      <th>platform</th>
+      <th>apiVersion</th>
+      <th>isRecommended</th>
+      <th>isOutdated</th>
+      <th>devVersion</th>
+    </tr>
+    <tr>
+      <td><div id="edit_version" /></td>
+      <td><div id="edit_platform" /></td>
+      <td><input id="edit_apiVersion" type=text></td>
+      <td><input id="edit_isRecommended" type=checkbox></td>
+      <td><input id="edit_isOutdated" type=checkbox></td>
+      <td><input id="edit_devVersion" type=checkbox></td>
+    </tr>
+  </table>
+  <button id="edit_submit">editItem</button>
+</div>
