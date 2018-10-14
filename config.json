@@ -16,7 +16,7 @@
         "uuid": "ferien2018",
         "ref": "https://www.schulferien.eu/downloads/ical4.php?land=3&type=1&year=2018",
         "uuidFormater": {
-          "regex": "-schulferien\\\\.eu$",
+          "regex": "-schulferien\\.eu$",
           "flags": "g",
           "replacement": "@schulferien.eu"
         }
@@ -24,7 +24,7 @@
         "uuid": "ferien2019",
         "ref": "https://www.schulferien.eu/downloads/ical4.php?land=3&type=1&year=2019",
         "uuidFormater": {
-          "regex": "-schulferien\\\\.eu$",
+          "regex": "-schulferien\\.eu$",
           "flags": "g",
           "replacement": "@schulferien.eu"
         }
@@ -32,7 +32,7 @@
         "uuid": "feiertage2018",
         "ref": "https://www.schulferien.eu/downloads/ical4.php?land=NI&type=0&year=2018",
         "uuidFormater": {
-          "regex": "-schulferien\\\\.eu$",
+          "regex": "-schulferien\\.eu$",
           "flags": "g",
           "replacement": "@schulferien.eu"
         }
@@ -40,7 +40,7 @@
         "uuid": "feiertage2019",
         "ref": "https://www.schulferien.eu/downloads/ical4.php?land=NI&type=0&year=2019",
         "uuidFormater": {
-          "regex": "-schulferien\\\\.eu$",
+          "regex": "-schulferien\\.eu$",
           "flags": "g",
           "replacement": "@schulferien.eu"
         }
