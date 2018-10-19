@@ -6,7 +6,7 @@
     "database": "NIGB"
   },
   "snowflake": {
-    "host": "nigb.app",
+    "hostname": "nigb.app",
     "datacenter": 1,
     "worker": 1
   },
@@ -51,7 +51,5 @@
         "password": "--password--"
       }
     ]
-  },
-  "BROADCAST_DELAY_MIN": 5,
-  "MAX_TIME_FOR_3_CRASHES": 5
+  }
 }
