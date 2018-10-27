@@ -1,6 +1,6 @@
 {
   "mysql_readwrite": {
-    "host": "db.nigb.app",
+    "hostname": "db.nigb.app",
     "user": "",
     "password": "",
     "database": "NIGB"
