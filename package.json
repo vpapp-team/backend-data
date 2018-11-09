@@ -17,7 +17,7 @@
     "backend-logger": "github:vpapp-team/backend-logger",
     "backend-types": "github:vpapp-team/backend-types",
     "backend-util": "github:vpapp-team/backend-util",
-    "ical.js": "^1.2.2",
+    "ical.js": "^1.3.0",
     "iconv-lite": "^0.4.24",
     "mysql": "^2.16.0",
     "pdfjs-dist": "^2.0.489",
