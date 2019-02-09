@@ -38,7 +38,7 @@
 > a array of objects with the following properties
 >
 > | name | type | optional | description |
-> | --- | --- | --- | --- | --- |
+> | --- | --- | --- | --- |
 > | uuid | string | false | the calendar uuid to use for this calendar |
 > | ref | string | false | a web link to the calendar |
 > | uuidFormater | object | true | a regex to modify the ical uuids to match the [backend-types#uuid spec](https://github.com/vpapp-team/backend-types/blob/master/README.md#uuid) |
