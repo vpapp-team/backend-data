@@ -18,7 +18,7 @@
     "backend-types": "github:vpapp-team/backend-types",
     "backend-util": "github:vpapp-team/backend-util",
     "ical.js": "^1.2.2",
-    "iconv-lite": "^0.4.24",
+    "iconv-lite": "^0.5.0",
     "mysql": "^2.16.0",
     "pdfjs-dist": "^2.0.489",
     "rrule": "^2.5.6"
